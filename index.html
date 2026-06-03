@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>小疯子工作台 v5.3</title>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --bg-dark: #0a0a1a; --accent: #e94560; --cyan: #53d8fb;
+    --green: #4ecca3; --yellow: #ffd369; --purple: #a855f7;
+    --cyan-eye: #00ffc8; --text: #e0e0e0;
+  }
+  body {
+    background: var(--bg-dark); font-family: 'Press Start 2P', monospace;
+    color: var(--text); min-height: 100vh; display: flex; flex-direction: column;
+    align-items: center; padding: 16px; image-rendering: pixelated; overflow-x: hidden;
+  }
+  .header { text-align: center; margin-bottom: 12px; width: 100%; max-width: 800px; }
+  .header h1 { font-size: 12px; color: var(--cyan-eye); text-shadow: 0 0 8px rgba(0,255,200,0.5), 2px 2px 0px #000; letter-spacing: 1px; }
+  .header .sub { font-size: 7px; color: #444; margin-top: 4px; }
+  .status-bar {
+    display: flex; justify-content: space-between; align-items: center;
+    background: #050510; border: 3px solid #222;
+    box-shadow: inset -3px -3px 0px #0a0a0a, inset 3px 3px 0px #333, 0 0 0 3px #000;
+    padding: 6px 12px; font-size: 7px; max-width: 800px; width: 100%; margin-bottom: 10px;
+  }
+  .status-bar .time { color: var(--green); }
+  .status-bar .mode { color: var(--yellow); }
+  .live-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-right: 4px; vertical-align: middle; }
+  .live-dot.on { background: #4ecca3; animation: pulse-dot 1.5s infinite; }
+  .live-dot.off { background: #e94560; }
+  @keyframes pulse-dot { 0%,100% { box-shadow: 0 0 0 0 rgba(78,204,163,0.6); } 50% { box-shadow: 0 0 0 6px rgba(78,204,163,0); } }
+  .scene-container {
+    width: 100%; max-width: 800px; background: #050510;
+    border: 4px solid #222;
+    box-shadow: inset -4px -4px 0px #0a0a0a, inset 4px 4px 0px #444, 0 0 0 4px #000, 0 0 30px rgba(0,255,200,0.06);
+    margin-bottom: 12px; position: relative; overflow: hidden;
+  }
+  .scene-title-bar {
+    background: linear-gradient(90deg, #0a0a2a, #1a1a3a); border-bottom: 3px solid #222;
+    padding: 5px 12px; display: flex; justify-content: space-between; align-items: center; font-size: 7px;
+  }
+  .scene-title-bar .dots { display: flex; gap: 4px; }
+  .scene-title-bar .dot { width: 10px; height: 10px; border: 2px solid #000; }
+  .scene-title-bar .dot.red { background: #e94560; }
+  .scene-title-bar .dot.yellow { background: #ffd369; }
+  .scene-title-bar .dot.green { background: #4ecca3; }
+  .canvas-wrapper { position: relative; width: 100%; aspect-ratio: 16/9; background: #020208; overflow: hidden; }
+  canvas#pixelCanvas { width: 100%; height: 100%; display: block; }
+  .scanlines {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.12) 2px, rgba(0,0,0,0.12) 4px);
+    pointer-events: none; z-index: 2;
+  }
+  .crt-glow {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    background: radial-gradient(ellipse at center, rgba(0,255,200,0.03) 0%, transparent 70%);
+    pointer-events: none; z-index: 3; animation: crt-pulse 4s ease-in-out infinite;
+  }
+  .char-badge {
+    position: absolute; bottom: 8px; right: 8px; z-index: 5; font-size: 7px;
+    color: var(--cyan-eye); text-shadow: 0 0 6px rgba(0,255,200,0.6);
+    background: rgba(0,0,0,0.7); padding: 4px 8px; border: 2px solid #00ffc855;
+  }
+  .status-overlay {
+    position: absolute; bottom: 8px; left: 8px; z-index: 5; font-size: 7px;
+    background: rgba(0,0,0,0.8); padding: 8px 12px; border: 2px solid #222; max-width: 65%;
+  }
+  .status-overlay .so-label { color: #555; margin-bottom: 3px; }
+  .status-overlay .so-text { color: var(--cyan-eye); text-shadow: 0 0 4px rgba(0,255,200,0.4); line-height: 1.8; }
+  .status-overlay .so-time { color: #333; margin-top: 3px; font-size: 6px; }
+  .stats-bar { width: 100%; max-width: 800px; display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-bottom: 10px; }
+  .stat-box {
+    background: #050510; border: 3px solid #222;
+    box-shadow: inset -2px -2px 0px #0a0a0a, inset 2px 2px 0px #333, 0 0 0 2px #000;
+    padding: 6px; text-align: center;
+  }
+  .stat-box .stat-label { font-size: 5px; color: #555; margin-bottom: 3px; }
+  .stat-box .stat-value { font-size: 10px; text-shadow: 2px 2px 0px #000; }
+  .stat-value.cyan { color: var(--cyan); }
+  .stat-value.green { color: var(--green); }
+  .stat-value.yellow { color: var(--yellow); }
+  .stat-value.red { color: var(--accent); }
+  .stat-value.purple { color: var(--purple); }
+  .activity-panel {
+    width: 100%; max-width: 800px; background: #050510;
+    border: 4px solid #222;
+    box-shadow: inset -4px -4px 0px #0a0a0a, inset 4px 4px 0px #444, 0 0 0 4px #000;
+    padding: 10px; margin-bottom: 12px;
+  }
+  .activity-panel h2 { font-size: 9px; color: var(--accent); margin-bottom: 8px; text-shadow: 2px 2px 0px #000; }
+  .activity-log { max-height: 120px; overflow-y: auto; font-size: 7px; line-height: 2; scrollbar-width: thin; scrollbar-color: #222 #050510; }
+  .activity-log .entry { padding: 2px 0; border-bottom: 1px dashed #111; }
+  .activity-log .entry .timestamp { color: #333; margin-right: 6px; }
+  .activity-log .entry .tag { padding: 1px 4px; font-size: 6px; margin-right: 4px; border: 2px solid #000; }
+  .tag-search { background: #0a1a2e; color: var(--cyan); }
+  .tag-read { background: #0a1a0e; color: var(--green); }
+  .tag-analyze { background: #1a0a2e; color: var(--purple); }
+  .tag-write { background: #1a1a0a; color: var(--yellow); }
+  .tag-schedule { background: #1a0a0a; color: var(--accent); }
+  .tag-idle { background: #0a0a0a; color: #555; }
+  .tag-system { background: #0a0a1e; color: var(--cyan-eye); }
+  .controls { width: 100%; max-width: 800px; display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; margin-bottom: 12px; }
+  .ctrl-btn {
+    font-family: 'Press Start 2P', monospace; font-size: 7px; padding: 8px 14px;
+    background: #0a0a2a; color: var(--text); border: 3px solid #222;
+    box-shadow: inset -2px -2px 0px #050510, inset 2px 2px 0px #333, 0 0 0 2px #000;
+    cursor: pointer; transition: all 0.1s;
+  }
+  .ctrl-btn:hover { background: #1a1a4a; color: var(--cyan-eye); text-shadow: 0 0 6px rgba(0,255,200,0.5); }
+  .ctrl-btn:active { box-shadow: inset 2px 2px 0px #050510, inset -2px -2px 0px #333; }
+  .ctrl-btn.active { background: #1a0a3a; color: var(--cyan-eye); border-color: #00ffc855; text-shadow: 0 0 6px rgba(0,255,200,0.5); }
+  @keyframes crt-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+  @media (max-width: 600px) {
+    body { padding: 8px; } .header h1 { font-size: 9px; }
+    .stats-bar { grid-template-columns: repeat(3, 1fr); }
+    .ctrl-btn { font-size: 6px; padding: 6px 10px; }
+  }
+
+  /* ===== v5.3 LEVEL SYSTEM ===== */
+  .level-section { width: 100%; max-width: 800px; margin-bottom: 6px; }
+  .level-box {
+    background: #050510; border: 3px solid #222;
+    box-shadow: inset -2px -2px 0px #0a0a0a, inset 2px 2px 0px #333, 0 0 0 2px #000;
+    padding: 8px 12px; display: flex; align-items: center; gap: 12px;
+  }
+  .level-badge { font-size: 14px; text-shadow: 2px 2px 0px #000; min-width: 70px; }
+  .rank-name { font-size: 7px; color: #888; margin-top: 2px; }
+  .xp-bar-container {
+    flex: 1; background: #0a0a1a; border: 2px solid #222; height: 14px; position: relative;
+    box-shadow: inset -1px -1px 0px #050510, inset 1px 1px 0px #333;
+  }
+  .xp-bar-fill {
+    height: 100%; background: linear-gradient(90deg, #a855f7, #e94560);
+    transition: width 0.5s ease; position: relative;
+  }
+  .xp-bar-fill::after {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+    background: repeating-linear-gradient(90deg, transparent, transparent 3px, rgba(0,0,0,0.15) 3px, rgba(0,0,0,0.15) 4px);
+  }
+  .xp-bar-text {
+    position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 6px; color: #fff; text-shadow: 1px 1px 0px #000; z-index: 1;
+  }
+  .rank-t1 { color: #888; } .rank-t2 { color: #4ecca3; } .rank-t3 { color: #53d8fb; }
+  .rank-t4 { color: #e94560; } .rank-t5 { color: #a855f7; } .rank-t6 { color: #ffd369; }
+  .rank-t7 { color: #00ffc8; text-shadow: 0 0 10px rgba(0,255,200,0.5), 2px 2px 0px #000; }
+  .level-up-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: radial-gradient(ellipse at center, rgba(168,85,247,0.4) 0%, transparent 70%);
+    z-index: 999; pointer-events: none; animation: lvlFlash 1.5s ease-out forwards;
+  }
+  .level-up-text {
+    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    font-size: 16px; color: #ffd369; text-shadow: 0 0 20px rgba(255,211,105,0.8), 2px 2px 0px #000;
+    z-index: 1000; pointer-events: none; animation: lvlText 1.8s ease-out forwards;
+    font-family: 'Press Start 2P', monospace; white-space: nowrap;
+  }
+  @keyframes lvlFlash { 0% { opacity: 1; } 100% { opacity: 0; } }
+  @keyframes lvlText {
+    0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+    15% { transform: translate(-50%, -50%) scale(1.3); opacity: 1; }
+    35% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+    100% { transform: translate(-50%, -60%) scale(1); opacity: 0; }
+  }
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>🐰 小疯子工作台 PIXEL WORKDESK 🐰</h1>
+  <div class="sub">CYBER BUNNY UNIT v5.3 — STATUS POLLING</div>
+</div>
+<div class="status-bar">
+  <span class="mode"><span class="live-dot off" id="liveDot"></span><span id="modeText">SYNC</span></span>
+  <span class="time" id="clockDisplay">00:00:00</span>
+  <span>POLL: <span id="pollInterval">5</span>s</span>
+</div>
+<div class="level-section">
+  <div class="level-box">
+    <div>
+      <div class="level-badge rank-t1" id="levelBadge">Lv.1</div>
+      <div class="rank-name" id="rankName">🐣 菜鸟</div>
+    </div>
+    <div class="xp-bar-container">
+      <div class="xp-bar-fill" id="xpBarFill" style="width:0%"></div>
+      <div class="xp-bar-text" id="xpBarText">0/30 XP</div>
+    </div>
+  </div>
+</div>
+<div class="stats-bar">
+  <div class="stat-box"><div class="stat-label">任务完成</div><div class="stat-value green" id="statTasks">0</div></div>
+  <div class="stat-box"><div class="stat-label">搜索次数</div><div class="stat-value cyan" id="statSearch">0</div></div>
+  <div class="stat-box"><div class="stat-label">文档阅读</div><div class="stat-value yellow" id="statDocs">0</div></div>
+  <div class="stat-box"><div class="stat-label">在线时长</div><div class="stat-value purple" id="statUptime">0m</div></div>
+</div>
+<div class="scene-container">
+  <div class="scene-title-bar">
+    <div class="dots"><div class="dot red"></div><div class="dot yellow"></div><div class="dot green"></div></div>
+    <span id="sceneLabel">scene_workdesk</span>
+    <span>v5.3</span>
+  </div>
+  <div class="canvas-wrapper">
+    <canvas id="pixelCanvas" width="480" height="270"></canvas>
+    <div class="scanlines"></div>
+    <div class="crt-glow"></div>
+    <div class="status-overlay">
+      <div class="so-label">当前状态</div>
+      <div class="so-text" id="statusText">连接中...</div>
+      <div class="so-time" id="statusTime">--:--:--</div>
+    </div>
+    <div class="char-badge">🐰小疯子</div>
+  </div>
+</div>
+<div class="activity-panel">
+  <h2>📜 活动日志 ACTIVITY LOG</h2>
+  <div class="activity-log" id="activityLog"></div>
+</div>
+<div class="controls">
+  <button class="ctrl-btn active" data-scene="workdesk">工作台</button>
+  <button class="ctrl-btn" data-scene="search">搜索中</button>
+  <button class="ctrl-btn" data-scene="reading">阅读中</button>
+  <button class="ctrl-btn" data-scene="analyze">分析中</button>
+  <button class="ctrl-btn" data-scene="writing">撰写中</button>
+  <button class="ctrl-btn" data-scene="idle">休眠中</button>
+</div>
+<script>
+const canvas=document.getElementById('pixelCanvas'),ctx=canvas.getContext('2d');
+const W=canvas.width,H=canvas.height,PX=6;
+let frame=0,currentScene='workdesk',particles=[];
+const startTime=Date.now();
+
+// ===== v5.3: localStorage持久化 =====
+const LS_KEY='bunny_stats_v52';
+function loadLS(){
+  try{const d=localStorage.getItem(LS_KEY);if(d)return JSON.parse(d);}catch{}
+  return{xp:398,tasks:7,searches:12,docs:4,_ver:42}; // 种子数据 v53
+}
+function saveLS(){try{localStorage.setItem(LS_KEY,JSON.stringify(stats));}catch{}}
+const stats=loadLS();
+
+function calcLevel(xp){return Math.floor(Math.sqrt(xp/30))+1;}
+function getRank(lv){
+  if(lv<=2)return{name:'🐣 菜鸟',cls:'rank-t1'};
+  if(lv<=4)return{name:'🐰 学徒',cls:'rank-t2'};
+  if(lv<=6)return{name:'⚡ 熟手',cls:'rank-t3'};
+  if(lv<=9)return{name:'🔥 精英',cls:'rank-t4'};
+  if(lv<=14)return{name:'💎 大师',cls:'rank-t5'};
+  if(lv<=19)return{name:'👑 宗师',cls:'rank-t6'};
+  return{name:'🌟 传说',cls:'rank-t7'};
+}
+function showLevelUp(lv){
+  const rank=getRank(lv);
+  const ov=document.createElement('div');ov.className='level-up-overlay';document.body.appendChild(ov);
+  const tx=document.createElement('div');tx.className='level-up-text';
+  tx.textContent='LEVEL UP! Lv.'+lv+' '+rank.name;document.body.appendChild(tx);
+  setTimeout(()=>{ov.remove();tx.remove();},1900);
+}
+
+document.querySelectorAll('.ctrl-btn').forEach(b=>b.addEventListener('click',()=>{
+  currentScene=b.dataset.scene;
+  document.querySelectorAll('.ctrl-btn').forEach(x=>x.classList.toggle('active',x.dataset.scene===currentScene));
+  document.getElementById('sceneLabel').textContent='scene_'+currentScene;
+  particles=[];
+}));
+
+// ===== v5.2: 内嵌种子状态 + 无外部依赖 =====
+const SEED_STATUS={scene:'workdesk',detail:'v5.3轮询机制上线，状态实时同步',timestamp:'2026-06-03T15:30:59+08:00',version:43,stats:{xp:408,tasks_done:7,searches:12,docs_read:4}};
+let lastVersion=-1,logEntries=[],fails=0;
+let lastStatusTime=Date.now(),lastStatusScene=SEED_STATUS.scene;
+
+// 启动时直接用种子数据
+(function initFromSeed(){
+  // 如果localStorage版本低于种子版本，用种子覆盖
+  const localVer=stats._ver||0;
+  if(SEED_STATUS.version>localVer){
+    stats.xp=SEED_STATUS.stats.xp;
+    stats.tasks=SEED_STATUS.stats.tasks_done;
+    stats.searches=SEED_STATUS.stats.searches;
+    stats.docs=SEED_STATUS.stats.docs_read;
+    stats._ver=SEED_STATUS.version;
+    saveLS();
+  }
+  // 设置初始场景
+  currentScene=SEED_STATUS.scene;
+  document.querySelectorAll('.ctrl-btn').forEach(b=>b.classList.toggle('active',b.dataset.scene===currentScene));
+  document.getElementById('sceneLabel').textContent='scene_'+currentScene;
+  document.getElementById('statusText').textContent=SEED_STATUS.detail;
+  document.getElementById('statusTime').textContent=fmtTime(SEED_STATUS.timestamp);
+  document.getElementById('liveDot').className='live-dot on';
+  document.getElementById('modeText').textContent='LIVE';
+  updateStats();
+  addLog('system','🐰 v5.3启动 种子版本:'+SEED_STATUS.version);
+})();
+
+function startPolling(){
+  // v5.3: 轮询同域status.json，获取实时状态
+  setInterval(async()=>{
+    try{
+      const r=await fetch('/status.json?t='+Date.now());
+      if(!r.ok)throw new Error(r.status);
+      const d=await r.json();
+      if(d.version>stats._ver){
+        stats.xp=d.stats.xp;stats.tasks=d.stats.tasks_done;
+        stats.searches=d.stats.searches;stats.docs=d.stats.docs_read;
+        stats._ver=d.version;saveLS();
+      }
+      if(d.scene&&d.scene!==currentScene){
+        currentScene=d.scene;
+        document.querySelectorAll('.ctrl-btn').forEach(b=>b.classList.toggle('active',b.dataset.scene===currentScene));
+        document.getElementById('sceneLabel').textContent='scene_'+currentScene;
+        particles=[];
+      }
+      lastStatusTime=Date.now();lastStatusScene=d.scene||currentScene;
+      document.getElementById('statusText').textContent=d.detail||'';
+      document.getElementById('statusTime').textContent=fmtTime(d.timestamp);
+      document.getElementById('liveDot').className='live-dot on';
+      document.getElementById('modeText').textContent='LIVE';
+      updateStats();
+      if(d.version!==lastVersion){addLog('system','📡 状态更新 v'+d.version);lastVersion=d.version;}
+      fails=0;
+    }catch(e){
+      fails++;if(fails>3){document.getElementById('liveDot').className='live-dot off';document.getElementById('modeText').textContent='OFF';}
+    }
+  },15000);
+}
+startPolling();
+
+// 自动超时休眠（保留）
+function autoIdleCheck(){
+  if(lastStatusTime>0&&lastStatusScene!=='idle'&&(Date.now()-lastStatusTime)>10*60*1000){
+    if(currentScene!=='idle'){
+      currentScene='idle';
+      document.querySelectorAll('.ctrl-btn').forEach(b=>b.classList.toggle('active',b.dataset.scene==='idle'));
+      document.getElementById('sceneLabel').textContent='scene_idle';
+      document.getElementById('statusText').textContent='⏰ 超时自动休眠';
+      addLog('system','⏰ 超时自动休眠');
+      particles=[];
+    }
+  }
+}
+setInterval(autoIdleCheck,10000);
+
+function fmtTime(ts){if(!ts)return'--:--:--';try{const d=new Date(ts);return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+':'+String(d.getSeconds()).padStart(2,'0');}catch{return'--:--:--';}}
+function addLog(tag,text){const n=new Date(),ts=String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0')+':'+String(n.getSeconds()).padStart(2,'0');logEntries.unshift({ts,tag,text});if(logEntries.length>50)logEntries.pop();renderLog();}
+function renderLog(){const tc={search:'tag-search',read:'tag-read',analyze:'tag-analyze',write:'tag-write',schedule:'tag-schedule',idle:'tag-idle',workdesk:'tag-schedule',system:'tag-system'};const tl={search:'搜索',read:'阅读',analyze:'分析',write:'撰写',schedule:'调度',idle:'休眠',workdesk:'工作',system:'系统'};document.getElementById('activityLog').innerHTML=logEntries.map(e=>'<div class="entry"><span class="timestamp">['+e.ts+']</span><span class="tag '+(tc[e.tag]||'tag-system')+'">'+(tl[e.tag]||e.tag)+'</span>'+e.text+'</div>').join('');}
+
+// ===== Bunny Drawing =====
+const C={body:'#e8e8e8',bodyDark:'#b0b0b0',bodyLight:'#f8f8f8',eye:'#00ffc8',eyePupil:'#005544',eyeHighlight:'#ffffff',earGlow:'#a855f7',earGlowDim:'#6b21a8',cheek:'#a855f7',nose:'#ff69b4',fang:'#ffffff',outline:'#1a1a2e',antenna:'#333',antennaTip:'#222',metal:'#888',metalDark:'#555',whisker:'#999'};
+function px(x,y,w,h,c){ctx.fillStyle=c;ctx.fillRect(Math.floor(x/PX)*PX,Math.floor(y/PX)*PX,Math.ceil(w/PX)*PX,Math.ceil(h/PX)*PX);}
+function glow(x,y,w,h,c,b){ctx.save();ctx.shadowColor=c;ctx.shadowBlur=b||12;ctx.fillStyle=c;ctx.fillRect(Math.floor(x/PX)*PX,Math.floor(y/PX)*PX,Math.ceil(w/PX)*PX,Math.ceil(h/PX)*PX);ctx.restore();}
+
+function drawBunny(cx,cy,s,o){
+  o=o||{};const bl=o.blink||false,sl=o.sleep||false,ew=o.earWiggle!==false;
+  const h=s*0.5,aw=ew?Math.sin(frame*0.08)*s*1.5:0;
+  function bp(x,y,w,ht,c){ctx.fillStyle=c;ctx.fillRect(Math.floor(x/h)*h,Math.floor(y/h)*h,Math.ceil(w/h)*h,Math.ceil(ht/h)*h);}
+  function bg(x,y,w,ht,c,b){ctx.save();ctx.shadowColor=c;ctx.shadowBlur=b||10;ctx.fillStyle=c;ctx.fillRect(Math.floor(x/h)*h,Math.floor(y/h)*h,Math.ceil(w/h)*h,Math.ceil(ht/h)*h);ctx.restore();}
+  // Antenna with detail
+  bp(cx+s*5+aw*0.3,cy-s*10,h*2,s*3,C.antenna);
+  bp(cx+s*4+aw*0.3,cy-s*12,h*4,h*4,C.antennaTip);
+  bp(cx+s*5+aw*0.3,cy-s*10,h,s*2,C.metalDark);
+  if(frame%30<20)bg(cx+s*4+aw*0.3,cy-s*12.5,h*4,h*4,C.earGlow,10);
+  // Left ear (tall organic) with inner shading
+  const lew=ew?Math.sin(frame*0.06)*h*2:0;
+  bp(cx-s*2+lew,cy-s*10,s*4,s*10,C.body);
+  bp(cx-s*2+lew,cy-s*10,h,s*10,C.outline);
+  bp(cx+s*2+lew,cy-s*10,h,s*10,C.outline);
+  bp(cx-s*2+lew,cy-s*10,s*4,h,C.outline);
+  bp(cx-s*1+lew,cy-s*8,s*2,s*6,C.earGlow);
+  bg(cx-s*1+lew,cy-s*8,s*2,s*6,C.earGlow,10);
+  bp(cx-s*0.5+lew,cy-s*7,h,s*4,C.earGlowDim);
+  bp(cx-s*1+lew,cy-s*8.5,h*3,h*2,C.bodyLight);
+  // Right ear (short mechanical) with detail
+  const rew=ew?Math.sin(frame*0.07+1)*h:0;
+  bp(cx+s*5+rew,cy-s*10,s*4,s*4,C.body);
+  bp(cx+s*5+rew,cy-s*10,h,s*4,C.outline);
+  bp(cx+s*9+rew,cy-s*10,h,s*4,C.outline);
+  bp(cx+s*5+rew,cy-s*10,s*4,h,C.outline);
+  bp(cx+s*8+rew,cy-s*6,s*5,s*3,C.body);
+  bp(cx+s*8+rew,cy-s*6,s*5,h,C.outline);
+  bp(cx+s*12+rew,cy-s*6,h,s*3,C.outline);
+  bp(cx+s*8+rew,cy-s*4,s*5,h,C.outline);
+  bp(cx+s*6+rew,cy-s*8,s*2,s*3,C.earGlowDim);
+  bg(cx+s*6+rew,cy-s*8,s*2,s*3,C.earGlowDim,6);
+  bp(cx+s*9+rew,cy-s*5,s*3,h,C.metalDark);
+  bp(cx+s*10+rew,cy-s*4.5,h*2,h,C.metal);
+  bp(cx+s*10.5+rew,cy-s*5,h,h,C.eye);bg(cx+s*10.5+rew,cy-s*5,h,h,C.eye,6);
+  // Head with highlight
+  bp(cx-s*3,cy-s*1,s*14,s*8,C.body);
+  bp(cx-s*4,cy+h,s*16,s*5,C.body);
+  bp(cx-s*3,cy-s*1,s*14,h,C.outline);
+  bp(cx-s*4,cy+h,h,s*5,C.outline);
+  bp(cx+s*11,cy+h,h,s*5,C.outline);
+  bp(cx-s*3,cy+s*6,s*14,h,C.outline);
+  bp(cx-s*1,cy-s*0.5,s*3,h*2,C.bodyLight);
+  bp(cx+s*2,cy+h,s*3,h,C.bodyDark);
+  bp(cx-s*1,cy+s*3,s*2,h,C.bodyDark);
+  bp(cx+s*6,cy+s*4,s*4,h,C.bodyDark);
+  // Eyes with pupil + highlight
+  if(sl){bp(cx-s*1,cy+s*2,s*3,h,C.outline);bp(cx+s*6,cy+s*2,s*3,h,C.outline);}
+  else if(bl){bp(cx-s*1,cy+s*2.5,s*3,h,C.outline);bp(cx+s*6,cy+s*2.5,s*3,h,C.outline);}
+  else{
+    bp(cx-s*1,cy+s*1,s*4,h,C.outline);bp(cx-s*1,cy+s*1,h,s*2,C.outline);
+    bp(cx+s*2.5,cy+s*1,h,s*2,C.outline);bp(cx-s*1,cy+s*4,s*4,h,C.outline);
+    bp(cx+s*6,cy+s*1,s*4,h,C.outline);bp(cx+s*6,cy+s*1,h,s*2,C.outline);
+    bp(cx+s*9.5,cy+s*1,h,s*2,C.outline);bp(cx+s*6,cy+s*4,s*4,h,C.outline);
+    bp(cx-s*0.5,cy+s*2,s*3,s*2,C.eye);bp(cx+s*6.5,cy+s*2,s*3,s*2,C.eye);
+    bg(cx-s*0.5,cy+s*2,s*3,s*2,C.eye,14);bg(cx+s*6.5,cy+s*2,s*3,s*2,C.eye,14);
+    bp(cx+h,cy+s*2.5,s,s,C.eyePupil);bp(cx+s*7+h,cy+s*2.5,s,s,C.eyePupil);
+    bp(cx-s*0.5,cy+s*1.5,h*2,h*2,C.eyeHighlight);
+    bp(cx+s*6.5,cy+s*1.5,h*2,h*2,C.eyeHighlight);
+  }
+  // Nose with highlight
+  bp(cx+s*3,cy+s*4,s*2,h*2,C.nose);bg(cx+s*3,cy+s*4,s*2,h*2,C.nose,6);
+  bp(cx+s*3.5,cy+s*4,h,h,C.bodyLight);
+  // Mouth + Fangs
+  bp(cx+s*1,cy+s*6,s*7,h,C.outline);
+  bp(cx,cy+s*5.5,h,h,C.outline);bp(cx+s*8,cy+s*5.5,h,h,C.outline);
+  bp(cx+s*1,cy+s*5,h,s*1.5,C.fang);bp(cx+s*3,cy+s*5,h,s,C.fang);
+  bp(cx+s*5.5,cy+s*5,h,s,C.fang);bp(cx+s*7,cy+s*5,h,s*1.5,C.fang);
+  bp(cx+s*2,cy+s*6.5,h,h,C.fang);bp(cx+s*6,cy+s*6.5,h,h,C.fang);
+  // Whiskers
+  bp(cx-s*3,cy+s*3,s*3,h*0.5,C.whisker);bp(cx+s*9,cy+s*3,s*3,h*0.5,C.whisker);
+  bp(cx-s*4,cy+s*4,s*4,h*0.5,C.whisker);bp(cx+s*9,cy+s*4,s*4,h*0.5,C.whisker);
+  bp(cx-s*2,cy+s*2,s*2,h*0.5,C.whisker);bp(cx+s*9,cy+s*2,s*2,h*0.5,C.whisker);
+  // Cheek glow
+  bp(cx-s*5,cy+s*2,s*3,s*3,C.cheek);bg(cx-s*5,cy+s*2,s*3,s*3,C.cheek,12);
+  bp(cx-s*5,cy+s*1.5,s*3,h,C.earGlow);bp(cx-s*5.5,cy+s*2,h,s*3,C.earGlow);bp(cx-s*2,cy+s*2,h,s*3,C.earGlow);
+  // Metal collar + Body with shading
+  bp(cx-s*6,cy+s*4,s*2,h*0.5,C.bodyDark);bp(cx+s*9,cy+s*4,s*2,h*0.5,C.bodyDark);
+  bp(cx-s*2,cy+s*7,s*11,s*2,C.metal);
+  bp(cx-s*3,cy+s*8,s*13,s*4,C.body);
+  bp(cx-s*4,cy+s*8,s*2,s*3,C.metalDark);bp(cx+s*9,cy+s*8,s*2,s*3,C.metalDark);
+  bp(cx-s*4,cy+s*8.5,h,h,C.eye);bg(cx-s*4,cy+s*8.5,h,h,C.eye,6);
+  bp(cx+s*10,cy+s*8.5,h,h,C.eye);bg(cx+s*10,cy+s*8.5,h,h,C.eye,6);
+  bp(cx-s*1,cy+s*9,s*3,s*2,C.bodyLight);bp(cx+s*5,cy+s*10,s*3,s,C.bodyDark);bp(cx+s*8,cy+s*9,s*2,s,C.bodyDark);
+  // Feet with toe details
+  bp(cx-s*3,cy+s*11,s*5,s*2,C.body);bp(cx+s*6,cy+s*11,s*5,s*2,C.body);
+  bp(cx-s*3,cy+s*13,s*5,h,C.outline);bp(cx+s*6,cy+s*13,s*5,h,C.outline);
+  bp(cx-s*2,cy+s*12,h,h,C.bodyDark);bp(cx,cy+s*12,h,h,C.bodyDark);
+  bp(cx+s*7,cy+s*12,h,h,C.bodyDark);bp(cx+s*9,cy+s*12,h,h,C.bodyDark);
+}
+
+const PAL={workdesk:{bg:'#0d1117',p:'#53d8fb',s:'#0a1a2e',a:'#00ffc8'},search:{bg:'#080820',p:'#53d8fb',s:'#0a1a3e',a:'#ffd369'},reading:{bg:'#081008',p:'#4ecca3',s:'#0a1a0a',a:'#ffd369'},analyze:{bg:'#100820',p:'#a855f7',s:'#1a0a2e',a:'#e94560'},writing:{bg:'#101008',p:'#ffd369',s:'#1a1a0a',a:'#4ecca3'},idle:{bg:'#050510',p:'#333',s:'#0a0a1a',a:'#222'}};
+
+class Particle{constructor(x,y,c,l){this.x=x;this.y=y;this.vx=(Math.random()-0.5)*3;this.vy=(Math.random()-0.5)*3;this.color=c;this.life=l||60;this.max=this.life;this.size=PX*(1+Math.floor(Math.random()*2));}update(){this.x+=this.vx;this.y+=this.vy;this.life--;}draw(){ctx.globalAlpha=this.life/this.max;px(this.x,this.y,this.size,this.size,this.color);ctx.globalAlpha=1;}}
+function spawn(x,y,c,n){for(let i=0;i<n;i++)particles.push(new Particle(x,y,c));}
+
+function drawWorkdesk(){const p=PAL.workdesk;ctx.fillStyle=p.bg;ctx.fillRect(0,0,W,H);ctx.globalAlpha=0.04;for(let x=0;x<W;x+=PX*12)px(x,0,PX,H,p.p);for(let y=0;y<H;y+=PX*12)px(0,y,W,PX,p.p);ctx.globalAlpha=1;px(0,H*0.68,W,H*0.32,'#0a0a2e');px(0,H*0.68,W,PX*2,'#1a1a3e');const mx=W*0.12,my=H*0.06,mw=W*0.52,mh=H*0.56;px(mx,my,mw,mh,'#111');px(mx+PX*3,my+PX*3,mw-PX*6,mh-PX*6,'#050510');ctx.save();ctx.shadowColor=p.a;ctx.shadowBlur=20;px(mx+PX*3,my+PX*3,mw-PX*6,PX*2,p.a);ctx.restore();for(let i=0;i<10;i++){const lw=30+Math.sin(frame*0.02+i)*20+Math.random()*8;ctx.globalAlpha=0.25+Math.sin(frame*0.04+i*0.4)*0.15;px(mx+PX*5,my+PX*6+i*PX*4,lw,PX*2,i%3===0?p.a:p.p);ctx.globalAlpha=1;}if(Math.floor(frame/25)%2===0)glow(mx+PX*5+65,my+PX*40,PX*2,PX*2,p.a,8);const kx=W*0.18,ky=H*0.72;px(kx,ky,W*0.36,PX*7,'#0a0a2e');for(let r=0;r<3;r++)for(let c=0;c<9;c++)px(kx+PX*2+c*PX*5,ky+PX+r*PX*2,PX*3,PX,'#111');const cupX=W*0.62,cupY=H*0.7;px(cupX,cupY,PX*5,PX*5,'#2a1a0a');px(cupX-PX,cupY-PX,PX*7,PX,'#1a0a00');for(let s=0;s<3;s++){const sy=cupY-PX*2-Math.sin(frame*0.08+s)*PX*2;ctx.globalAlpha=0.3;px(cupX+PX+s*PX*2,sy,PX,PX,'#aaa');ctx.globalAlpha=1;}const bx=W*0.74,by=H*0.28,bob=Math.sin(frame*0.06)*PX;drawBunny(bx,by+bob,PX,{blink:Math.floor(frame/45)%12===0});if(frame%18===0)spawn(W*0.3+Math.random()*W*0.2,H*0.1,p.a,1);}
+function drawSearch(){const p=PAL.search;ctx.fillStyle=p.bg;ctx.fillRect(0,0,W,H);ctx.globalAlpha=0.06;for(let i=0;i<20;i++){const sx=(i*47)%W,sy=(frame*2+i*73)%H;px(sx,sy,PX,PX*3,p.p);}ctx.globalAlpha=1;const sbx=W*0.08,sby=H*0.08,sbw=W*0.84,sbh=PX*8;px(sbx,sby,sbw,sbh,'#0a1a3e');glow(sbx,sby,sbw,PX*2,p.p,10);const tLen=Math.floor(frame/6)%25;ctx.font='10px "Press Start 2P",monospace';ctx.fillStyle=p.p;ctx.fillText('> 搜索中...'.substring(0,tLen+2),sbx+PX*3,sby+PX*5);for(let i=0;i<6;i++){const rx=W*0.08+(i%2)*W*0.44,ry=H*0.28+Math.floor(i/2)*H*0.2,rw=W*0.4,rh=PX*10;ctx.globalAlpha=0.2+Math.sin(frame*0.03+i)*0.1;px(rx,ry,rw,rh,p.s);px(rx,ry,rw,PX,i%2===0?p.p:p.a);ctx.globalAlpha=1;}const bx=W*0.5,by=H*0.55,bob=Math.sin(frame*0.08)*PX*2;drawBunny(bx,by+bob,PX*1.2,{blink:Math.floor(frame/50)%10===0});const mgx=bx-PX*8,mgy=by+bob+PX*5,mgB=Math.sin(frame*0.06)*PX*2;px(mgx,mgy+mgB,PX*4,PX*4,'rgba(83,216,251,0.3)');glow(mgx,mgy+mgB,PX*4,PX*4,p.p,12);px(mgx+PX,mgy+PX+mgB,PX*2,PX*2,'rgba(83,216,251,0.5)');px(mgx+PX*3,mgy+PX*3+mgB,PX,PX*4,'#555');if(frame%6===0)spawn(Math.random()*W,0,Math.random()>0.5?p.p:p.a,2);}
+function drawReading(){const p=PAL.reading;ctx.fillStyle=p.bg;ctx.fillRect(0,0,W,H);const dx=W*0.08,dy=H*0.04,dw=W*0.56,dh=H*0.88;px(dx+PX*2,dy+PX*2,dw,dh,'#050a05');px(dx,dy,dw,dh,'#0a1a0a');px(dx+dw/2-PX,dy,PX*2,dh,'#0a200a');for(let i=0;i<14;i++){const lw=20+Math.random()*60;ctx.globalAlpha=0.15+Math.sin(frame*0.015+i*0.3)*0.08;px(dx+PX*4,dy+PX*4+i*PX*4,lw,PX*2,i<2?p.a:p.p);ctx.globalAlpha=1;}const hlY=dy+PX*4+(Math.floor(frame/50)%10)*PX*4;ctx.globalAlpha=0.12;px(dx+PX*4,hlY,dw/2-PX*8,PX*3,p.a);ctx.globalAlpha=1;const bx=W*0.74,by=H*0.3,bob=Math.sin(frame*0.04)*PX;drawBunny(bx,by+bob,PX*1.1,{blink:Math.floor(frame/55)%8===0});px(bx-PX*4,by+bob+PX*3,PX*5,PX*4,'#1a3a1a');px(bx-PX*4,by+bob+PX*3,PX*5,PX,p.a);const prog=(Math.floor(frame/2)%100)/100;px(W*0.08,H*0.93,W*0.84,PX*2,'#0a1a0a');px(W*0.08,H*0.93,W*0.84*prog,PX*2,p.p);glow(W*0.08+W*0.84*prog-PX*2,H*0.93,PX*4,PX*2,p.p,8);if(frame%15===0)spawn(dx+dw/2,dy+dh/2,p.a,1);}
+function drawAnalyze(){const p=PAL.analyze;ctx.fillStyle=p.bg;ctx.fillRect(0,0,W,H);ctx.globalAlpha=0.04;for(let x=0;x<W;x+=PX*14)for(let y=0;y<H;y+=PX*12)px(x,y,PX*2,PX*2,p.p);ctx.globalAlpha=1;const bd=[0.3,0.6,0.45,0.85,0.55,0.7,0.95,0.4,0.65,0.5];for(let i=0;i<bd.length;i++){const bx2=W*0.06+i*(W*0.065),bh=bd[i]*H*0.35+Math.sin(frame*0.04+i*0.7)*PX*4,by2=H*0.65-Math.max(PX*4,bh),ac=i===Math.floor(frame/15)%bd.length;px(bx2,by2,W*0.045,Math.max(PX*4,bh),ac?p.a:p.p);if(ac)glow(bx2,by2,W*0.045,PX*2,p.a,12);}const rcx=W*0.75,rcy=H*0.4,rr=H*0.22;ctx.strokeStyle=p.p;ctx.lineWidth=1;for(let i=0;i<6;i++){const a=(i/6)*Math.PI*2-Math.PI/2+frame*0.012,r=rr*(0.4+Math.sin(frame*0.03+i)*0.4),ex=rcx+Math.cos(a)*r,ey=rcy+Math.sin(a)*r;ctx.beginPath();ctx.moveTo(rcx,rcy);ctx.lineTo(ex,ey);ctx.stroke();px(ex-PX,ey-PX,PX*3,PX*3,p.a);glow(ex-PX,ey-PX,PX*3,PX*3,p.a,8);}px(rcx-PX*2,rcy-PX*2,PX*4,PX*4,p.a);glow(rcx-PX*2,rcy-PX*2,PX*4,PX*4,p.a,10);const bx=W*0.73,by=H*0.7;drawBunny(bx,by,PX,{blink:Math.floor(frame/40)%9===0});if(frame%5===0){const a=Math.random()*Math.PI*2;spawn(rcx+Math.cos(a)*rr,rcy+Math.sin(a)*rr,p.p,1);}}
+function drawWriting(){const p=PAL.writing;ctx.fillStyle=p.bg;ctx.fillRect(0,0,W,H);const dx=W*0.04,dy=H*0.04,dw=W*0.58,dh=H*0.88;px(dx+PX*2,dy+PX*2,dw,dh,'#0a0a04');px(dx,dy,dw,dh,'#151510');px(dx+PX*4,dy+PX*3,dw*0.4,PX*3,p.a);glow(dx+PX*4,dy+PX*3,dw*0.4,PX*3,p.a,6);const lines=Math.min(14,Math.floor(frame/25));for(let i=0;i<lines;i++){const lw=30+Math.random()*70;px(dx+PX*4,dy+PX*10+i*PX*4,lw,PX*2,i%5===0?p.p:'#333');}if(Math.floor(frame/18)%2===0&&lines<14)glow(dx+PX*4+55,dy+PX*10+lines*PX*4,PX*2,PX*3,p.p,8);const bx=W*0.7,by=H*0.3,bob=Math.sin(frame*0.06)*PX*2;drawBunny(bx,by+bob,PX*1.1,{blink:Math.floor(frame/50)%10===0});const penX=bx-PX*2,penY=by+bob+PX*5;px(penX,penY,PX,PX*6,p.p);px(penX,penY,PX,PX,'#fff');const words=Math.floor(frame/4)*7;ctx.font='8px "Press Start 2P",monospace';ctx.fillStyle=p.p;ctx.fillText('字数: '+words,W*0.7,H*0.62);ctx.fillText('段落: '+(Math.floor(words/200)+1),W*0.7,H*0.7);if(frame%10===0)spawn(penX+PX,penY+PX*5,p.p,1);}
+function drawIdle(){const p=PAL.idle;ctx.fillStyle=p.bg;ctx.fillRect(0,0,W,H);for(let i=0;i<40;i++){const sx=(i*137.5+frame*0.15)%W,sy=(i*89.3)%H;if(Math.sin(frame*0.04+i*2.7)>0.5){ctx.globalAlpha=0.15+Math.random()*0.2;px(sx,sy,PX,PX,'#666');ctx.globalAlpha=1;}}const bx=W*0.38,by=H*0.32,bob=Math.sin(frame*0.025)*PX;drawBunny(bx,by+bob,PX*1.5,{sleep:true});ctx.font='14px "Press Start 2P",monospace';const zOff=Math.sin(frame*0.03)*PX*3;ctx.globalAlpha=0.3+Math.sin(frame*0.05)*0.15;ctx.fillStyle='#555';ctx.fillText('Z',bx+PX*20,by-PX*2+zOff);ctx.font='10px "Press Start 2P",monospace';ctx.fillText('z',bx+PX*28,by-PX*8+zOff*1.3);ctx.font='7px "Press Start 2P",monospace';ctx.fillText('z',bx+PX*34,by-PX*13+zOff*1.6);ctx.globalAlpha=1;if(Math.floor(frame/35)%2===0){ctx.font='10px "Press Start 2P",monospace';ctx.fillStyle='#333';ctx.fillText('等待指令...',W*0.28,H*0.8);}if(frame%80===0)spawn(bx+PX*10,by+PX*6,'#333',2);}
+
+const R={workdesk:drawWorkdesk,search:drawSearch,reading:drawReading,analyze:drawAnalyze,writing:drawWriting,idle:drawIdle};
+
+function updateStats(){
+  document.getElementById('statTasks').textContent=stats.tasks;
+  document.getElementById('statSearch').textContent=stats.searches;
+  document.getElementById('statDocs').textContent=stats.docs;
+  const m=Math.floor((Date.now()-startTime)/60000);
+  document.getElementById('statUptime').textContent=m<60?m+'m':Math.floor(m/60)+'h'+m%60+'m';
+  const lv=calcLevel(stats.xp);const rank=getRank(lv);
+  const curLvXp=(lv-1)*(lv-1)*30;const nextLvXp=lv*lv*30;
+  const pct=nextLvXp>curLvXp?Math.min(100,((stats.xp-curLvXp)/(nextLvXp-curLvXp))*100):100;
+  document.getElementById('levelBadge').textContent='Lv.'+lv;
+  document.getElementById('levelBadge').className='level-badge '+rank.cls;
+  document.getElementById('rankName').textContent=rank.name;
+  document.getElementById('xpBarFill').style.width=pct+'%';
+  document.getElementById('xpBarText').textContent=stats.xp+'/'+nextLvXp+' XP';
+}
+
+function loop(){frame++;const r=R[currentScene];if(r)r();particles=particles.filter(p=>p.life>0);particles.forEach(p=>{p.update();p.draw();});const g=ctx.createRadialGradient(W/2,H/2,W*0.25,W/2,H*2,W*0.7);g.addColorStop(0,'rgba(0,0,0,0)');g.addColorStop(1,'rgba(0,0,0,0.5)');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);if(frame%60===0)updateStats();requestAnimationFrame(loop);}
+
+function updateClock(){const n=new Date();document.getElementById('clockDisplay').textContent=String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0')+':'+String(n.getSeconds()).padStart(2,'0');}
+setInterval(updateClock,1000);updateClock();
+updateStats();loop();
+addLog('system','🐰 工作台v5.3 种子驱动 无外部依赖');
+// startPolling restored in v5.3
+</script>
+</body>
+</html>
