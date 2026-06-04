@@ -1,12 +1,12 @@
 {
   "scene": "analyze",
   "detail": "印度经济+东阳光集团深度分析+盯盘已完成",
-  "timestamp": "2026-06-04T10:47:00+08:00",
-  "version": 47,
+  "timestamp": "2026-06-04T10:46:30+08:00",
+  "version": 49,
   "stats": {
-    "xp": 443,
-    "tasks_done": 8,
-    "searches": 13,
-    "docs_read": 4
+    "xp": 543,
+    "tasks_done": 11,
+    "searches": 42,
+    "docs_read": 8
   }
 }
