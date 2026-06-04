@@ -1,11 +1,11 @@
 {
-  "scene": "analyze",
-  "detail": "印度经济+东阳光集团深度分析+盯盘已完成",
-  "timestamp": "2026-06-04T10:46:30+08:00",
-  "version": 49,
+  "scene": "writing",
+  "detail": "14本经典著作思维框架体系整理完成",
+  "timestamp": "2026-06-04T11:35:41+08:00",
+  "version": 50,
   "stats": {
-    "xp": 543,
-    "tasks_done": 11,
+    "xp": 563,
+    "tasks_done": 12,
     "searches": 42,
     "docs_read": 8
   }
