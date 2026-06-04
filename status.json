@@ -1,10 +1,10 @@
 {
-  "scene": "analyze",
-  "detail": "AI获利盘资金去向分析完成",
-  "timestamp": "2026-06-04T12:33:06+08:00",
-  "version": 52,
+  "scene": "reading",
+  "detail": "完成财经学习笔记20260604",
+  "timestamp": "2026-06-04T12:38:48+08:00",
+  "version": 53,
   "stats": {
-    "xp": 623,
+    "xp": 638,
     "tasks_done": 14,
     "searches": 43,
     "docs_read": 9
