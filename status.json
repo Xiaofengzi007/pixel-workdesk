@@ -1,12 +1,12 @@
 {
-  "scene": "writing",
-  "detail": "14本经典著作思维框架体系整理完成",
-  "timestamp": "2026-06-04T11:35:41+08:00",
-  "version": 50,
+  "scene": "reading",
+  "detail": "《实践论》《矛盾论》原文通读+深度学习笔记完成",
+  "timestamp": "2026-06-04T11:42:24+08:00",
+  "version": 51,
   "stats": {
-    "xp": 563,
-    "tasks_done": 12,
+    "xp": 593,
+    "tasks_done": 13,
     "searches": 42,
-    "docs_read": 8
+    "docs_read": 9
   }
 }
