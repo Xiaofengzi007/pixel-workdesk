@@ -1,12 +1,12 @@
 {
-  "scene": "reading",
-  "detail": "财经学习完成-富力恶化+美联储鹰派",
-  "timestamp": "2026-06-04T12:39:38+08:00",
-  "version": 54,
+  "scene": "analyze",
+  "detail": "运泰利深度分析完成",
+  "timestamp": "2026-06-05T08:54:45+08:00",
+  "version": 55,
   "stats": {
-    "xp": 663,
-    "tasks_done": 15,
-    "searches": 44,
+    "xp": 698,
+    "tasks_done": 16,
+    "searches": 45,
     "docs_read": 10
   }
 }
