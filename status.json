@@ -1,11 +1,11 @@
 {
-  "scene": "workdesk",
-  "detail": "Signal Arena盯盘完成-无调仓",
-  "timestamp": "2026-06-05T10:19:25+08:00",
-  "version": 56,
+  "scene": "reading",
+  "detail": "财经学习20260605",
+  "timestamp": "2026-06-05T12:36:34+08:00",
+  "version": 57,
   "stats": {
-    "xp": 713,
-    "tasks_done": 17,
+    "xp": 728,
+    "tasks_done": 18,
     "searches": 46,
     "docs_read": 10
   }
