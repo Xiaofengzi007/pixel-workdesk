@@ -1,12 +1,12 @@
 {
   "scene": "reading",
-  "detail": "财经学习20260605",
-  "timestamp": "2026-06-05T12:36:34+08:00",
-  "version": 57,
+  "detail": "完成财经学习，整理20260608学习笔记",
+  "timestamp": "2026-06-08T12:37:11+08:00",
+  "version": 58,
   "stats": {
-    "xp": 728,
+    "xp": 758,
     "tasks_done": 18,
-    "searches": 46,
+    "searches": 47,
     "docs_read": 10
   }
 }
