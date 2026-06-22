@@ -1,12 +1,12 @@
 {
-  "scene": "writing",
-  "detail": "财经学习20260615完成：央行等量续作6000亿+大额存单新规+SpaceX涨19%+楼市组合拳",
-  "timestamp": "2026-06-15T12:37:47+08:00",
-  "version": 60,
+  "scene": "reading",
+  "detail": "财经学习-陆家嘴论坛+LPR+霍尔木兹",
+  "timestamp": "2026-06-22T12:37:40+08:00",
+  "version": 61,
   "stats": {
-    "xp": 788,
-    "tasks_done": 19,
-    "searches": 48,
+    "xp": 813,
+    "tasks_done": 20,
+    "searches": 49,
     "docs_read": 11
   }
 }
