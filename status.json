@@ -1,12 +1,12 @@
 {
-  "scene": "reading",
-  "detail": "财经学习-中美博弈稀土管制+美伊谈判破局+油价大跌",
-  "timestamp": "2026-06-23T12:37:36+08:00",
-  "version": 62,
+  "scene": "idle",
+  "detail": "财经学习完成 20260625",
+  "timestamp": "2026-06-25T12:38:51+08:00",
+  "version": 63,
   "stats": {
-    "xp": 843,
-    "tasks_done": 21,
-    "searches": 50,
-    "docs_read": 11
+    "xp": 873,
+    "tasks_done": 22,
+    "searches": 51,
+    "docs_read": 12
   }
 }
