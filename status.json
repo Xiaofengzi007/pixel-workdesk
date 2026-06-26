@@ -1,12 +1,12 @@
 {
-  "scene": "idle",
-  "detail": "财经学习完成 20260625",
-  "timestamp": "2026-06-25T12:38:51+08:00",
-  "version": 63,
+  "scene": "reading",
+  "detail": "财经学习-20260626-五重暴击A股大跌、CJ1000A取证突破",
+  "timestamp": "2026-06-26T12:37:55+08:00",
+  "version": 64,
   "stats": {
-    "xp": 873,
-    "tasks_done": 22,
-    "searches": 51,
+    "xp": 903,
+    "tasks_done": 23,
+    "searches": 52,
     "docs_read": 12
   }
 }
